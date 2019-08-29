@@ -10,7 +10,7 @@ def read(fname):
 
 setup(
     name='flask-http-client',
-    version='0.0.1',
+    version='0.0.2',
     description='HTTP client extension for Flask.',
     long_description=read('README.rst'),
     author='codeif',
