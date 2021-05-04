@@ -1,4 +1,5 @@
 import requests
+from flask import g
 from requests.auth import HTTPBasicAuth
 
 
@@ -10,12 +11,14 @@ class HTTPClient(object):
         username=None,
         password=None,
         verify=None,
+        g_session_key=None,
         config_prefix="HTTP_CLIENT",
     ):
         self.base_url = base_url
         self.username = username
         self.password = password
         self.verify = verify
+        self.g_session_key = g_session_key
         self.config_prefix = config_prefix
 
         if app is not None:
@@ -30,6 +33,8 @@ class HTTPClient(object):
             self.password = app.config.get(f"{self.config_prefix}_PASSWORD")
         if self.verify is None:
             self.verify = app.config.get(f"{self.config_prefix}_VERIFY")
+        if self.g_session_key is None:
+            self.g_session_key = app.config.get(f"{self.config_prefix}_G_SESSION_KEY")
 
     def create_session(self):
         session = requests.Session()
@@ -41,9 +46,13 @@ class HTTPClient(object):
 
     def request(self, method, path, session=None, **kwargs):
         url = self.base_url + path
-        if not session:
-            session = self.create_session()
-        return session.request(method, url, **kwargs)
+        if session:
+            cur_session = session
+        elif self.g_session_key:
+            cur_session = getattr(g, self.g_session_key)
+        else:
+            cur_session = self.create_session()
+        return cur_session.request(method, url, **kwargs)
 
     def get(self, path, **kwargs):
         return self.request("GET", path, **kwargs)
