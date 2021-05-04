@@ -31,16 +31,19 @@ class HTTPClient(object):
         if self.verify is None:
             self.verify = app.config.get(f"{self.config_prefix}_VERIFY")
 
-        self.session = requests.Session()
+    def create_session(self):
+        session = requests.Session()
         if self.username and self.password:
-            self.session.auth = HTTPBasicAuth(self.username, self.password)
-
+            session.auth = HTTPBasicAuth(self.username, self.password)
         if self.verify is not None:
-            self.session.verify = self.verify
+            session.verify = self.verify
+        return session
 
-    def request(self, method, path, **kwargs):
+    def request(self, method, path, session=None, **kwargs):
         url = self.base_url + path
-        return self.session.request(method, url, **kwargs)
+        if not session:
+            session = self.create_session()
+        return session.request(method, url, **kwargs)
 
     def get(self, path, **kwargs):
         return self.request("GET", path, **kwargs)
