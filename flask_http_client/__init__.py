@@ -49,8 +49,9 @@ class HTTPClient(object):
         if session:
             cur_session = session
         elif self.g_session_key:
-            cur_session = getattr(g, self.g_session_key)
-        else:
+            cur_session = getattr(g, self.g_session_key, None)
+
+        if not cur_session:
             cur_session = self.create_session()
         return cur_session.request(method, url, **kwargs)
 
