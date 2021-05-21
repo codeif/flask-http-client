@@ -1,5 +1,5 @@
 import requests
-from flask import g
+from flask import g, request
 from requests.auth import HTTPBasicAuth
 
 
@@ -11,6 +11,8 @@ class HTTPClient(object):
         username=None,
         password=None,
         verify=None,
+        change_host=False,
+        headers=None,
         g_session_key=None,
         config_prefix="HTTP_CLIENT",
     ):
@@ -18,6 +20,8 @@ class HTTPClient(object):
         self.username = username
         self.password = password
         self.verify = verify
+        self.change_host = change_host
+        self.headers = headers
         self.g_session_key = g_session_key
         self.config_prefix = config_prefix
 
@@ -33,6 +37,8 @@ class HTTPClient(object):
             self.password = app.config.get(f"{self.config_prefix}_PASSWORD")
         if self.verify is None:
             self.verify = app.config.get(f"{self.config_prefix}_VERIFY")
+        if self.headers is None:
+            self.headers = app.config.get(f"{self.config_prefix}_HEADERS")
         if self.g_session_key is None:
             self.g_session_key = app.config.get(f"{self.config_prefix}_G_SESSION_KEY")
 
@@ -46,6 +52,8 @@ class HTTPClient(object):
 
     def request(self, method, path, session=None, **kwargs):
         url = self.base_url + path
+
+        cur_session = None
         if session:
             cur_session = session
         elif self.g_session_key:
@@ -53,6 +61,17 @@ class HTTPClient(object):
 
         if not cur_session:
             cur_session = self.create_session()
+
+        if self.change_host:
+            headers = kwargs.setdefault("headers", {})
+            headers["Host"] = request.host
+            kwargs["headers"] = headers
+
+        if self.headers:
+            headers = kwargs.setdefault("headers", {})
+            headers.update(self.headers)
+            kwargs["headers"] = headers
+
         return cur_session.request(method, url, **kwargs)
 
     def get(self, path, **kwargs):
