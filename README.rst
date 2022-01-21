@@ -40,7 +40,7 @@ API
 
 .. code-block:: py
 
-    http_client = AuthClient(config_prefix='YOUR_CONFIG_PREFIX')
+    http_client = HttpClient(config_prefix='YOUR_CONFIG_PREFIX')
 
 
 =====================   ================================================
