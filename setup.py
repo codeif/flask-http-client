@@ -6,7 +6,7 @@ with open("README.rst", encoding="utf-8") as f:
 
 setup(
     name="flask-http-client",
-    version="0.0.9",
+    version="0.0.10",
     description="HTTP client extension for Flask.",
     long_description=readme,
     author="codeif",
