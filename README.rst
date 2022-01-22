@@ -1,7 +1,7 @@
 HTTP client extension for Flask.
 ===========================================
 
-对requests库的包装，在flask配置文件中配置base_url, HttpBasicAuth, verify等。
+对requests库的包装，在flask配置文件中配置base_url, auth, 转发user-agent等。第一次访问网址生成全局的session, 本次request结束后， 关闭此session。
 
 
 安装
@@ -44,10 +44,8 @@ API
 
 
 =====================   ================================================
-配置项                  说明
+配置项                      说明
 =====================   ================================================
-HTTP_CLIENT_BASE_URL     api的url_prefix
-HTTP_CLIENT_USERNAME     BasicAuth的username
-HTTP_CLIENT_PASSWORD     BasicAuth的password
-HTTP_CLIENT_VERIFY       requests的verfy配置，可以是自定义证书的路径
+HTTP_CLIENT_BASE_URL    api的url_prefix
+HTTP_CLIENT_AUTH        requests中的auth参数
 =====================   ================================================

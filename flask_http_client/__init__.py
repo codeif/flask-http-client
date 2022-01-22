@@ -2,35 +2,39 @@ import requests
 from flask import _app_ctx_stack, has_request_context, request
 
 
-class HttpSession:
+class RequestsSessionWrapper:
+    """全局初始化一次即可"""
+
+    has_teardown = False
+
     def __init__(self, app=None):
-        self.has_init = False
         if app is not None:
             self.init_app(app)
 
     def init_app(self, app):
+        if self.has_teardown:
+            return
+        type(self).has_teardown = True
         app.teardown_appcontext(self.teardown)
-        self.has_init = True
 
     def teardown(self, exception):
         ctx = _app_ctx_stack.top
-        if hasattr(ctx, "zs_http_session"):
-            ctx.zs_http_session.close()
+        if hasattr(ctx, "requests_session"):
+            ctx.requests_session.close()
 
     @property
     def session(self):
         ctx = _app_ctx_stack.top
         if ctx is not None:
-            if not hasattr(ctx, "zs_http_session"):
-                ctx.zs_http_session = requests.Session()
-            return ctx.zs_http_session
+            if not hasattr(ctx, "requests_session"):
+                ctx.requests_session = requests.Session()
+            return ctx.requests_session
 
 
 class HttpClient:
     def __init__(
         self,
         app=None,
-        http_session=None,
         base_url=None,
         headers=None,
         auth=None,
@@ -38,7 +42,6 @@ class HttpClient:
         forward_user_agent=None,
         config_prefix="HTTP_CLIENT",
     ):
-        self.http_session = http_session
         self.base_url = base_url
         self.headers = headers
         self.auth = auth
@@ -62,10 +65,7 @@ class HttpClient:
             self.forward_user_agent = app.config.get(
                 f"{self.config_prefix}_FORWARD_USER_AGENT"
             )
-        if not self.http_session:
-            self.http_session = HttpSession(app)
-        elif not self.http_session.has_init:
-            self.http_session.init_app(app)
+        self.session_wrapper = RequestsSessionWrapper(app)
 
     def request(self, method, path, headers=None, **kwargs):
         url = self.base_url + path
@@ -88,7 +88,9 @@ class HttpClient:
         if headers:
             _headers.update(headers)
 
-        return self.http_session.session.request(method, url, headers=headers, **kwargs)
+        return self.session_wrapper.session.request(
+            method, url, headers=headers, **kwargs
+        )
 
     def get(self, path, **kwargs):
         return self.request("GET", path, **kwargs)
