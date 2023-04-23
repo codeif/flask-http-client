@@ -88,6 +88,9 @@ class HttpClient:
         if headers:
             _headers.update(headers)
 
+        if self.auth:
+            self.session_wrapper.session.auth = self.auth
+
         return self.session_wrapper.session.request(
             method, url, headers=headers, **kwargs
         )
