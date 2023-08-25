@@ -1,5 +1,5 @@
 import requests
-from flask import _app_ctx_stack, has_request_context, request
+from flask import g, has_request_context, request
 
 
 class RequestsSessionWrapper:
@@ -18,17 +18,16 @@ class RequestsSessionWrapper:
         app.teardown_appcontext(self.teardown)
 
     def teardown(self, exception):
-        ctx = _app_ctx_stack.top
-        if hasattr(ctx, "requests_session"):
-            ctx.requests_session.close()
+        requests_session = g.pop("requests_session", None)
+        if requests_session is not None:
+            requests_session.close()
 
     @property
     def session(self):
-        ctx = _app_ctx_stack.top
-        if ctx is not None:
-            if not hasattr(ctx, "requests_session"):
-                ctx.requests_session = requests.Session()
-            return ctx.requests_session
+        requests_session = g.get("requests_session", None)
+        if requests_session is None:
+            g.requests_session = requests.Session()
+        return g.requests_session
 
 
 class HttpClient:

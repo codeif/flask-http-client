@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "flask-http-client"
-version = "0.1.2"
+version = "0.1.3"
 description = ""
 authors = ["codeif <me@codeif.com>"]
 license = "BSD-3-Clause"
