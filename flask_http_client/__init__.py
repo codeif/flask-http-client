@@ -2,34 +2,6 @@ import requests
 from flask import g, has_request_context, request
 
 
-class RequestsSessionWrapper:
-    """全局初始化一次即可"""
-
-    has_teardown = False
-
-    def __init__(self, app=None):
-        if app is not None:
-            self.init_app(app)
-
-    def init_app(self, app):
-        if self.has_teardown:
-            return
-        type(self).has_teardown = True
-        app.teardown_appcontext(self.teardown)
-
-    def teardown(self, exception):
-        requests_session = g.pop("requests_session", None)
-        if requests_session is not None:
-            requests_session.close()
-
-    @property
-    def session(self):
-        requests_session = g.get("requests_session", None)
-        if requests_session is None:
-            g.requests_session = requests.Session()
-        return g.requests_session
-
-
 class HttpClient:
     def __init__(
         self,
@@ -53,7 +25,7 @@ class HttpClient:
 
     def init_app(self, app):
         if self.base_url is None:
-            self.base_url = app.config[f"{self.config_prefix}_BASE_URL"]
+            self.base_url = app.config.get(f"{self.config_prefix}_BASE_URL")
         if self.headers is None:
             self.headers = app.config.get(f"{self.config_prefix}_HEADERS")
         if self.auth is None:
@@ -64,9 +36,22 @@ class HttpClient:
             self.forward_user_agent = app.config.get(
                 f"{self.config_prefix}_FORWARD_USER_AGENT"
             )
-        self.session_wrapper = RequestsSessionWrapper(app)
+        app.teardown_appcontext(self.teardown)
+
+    def teardown(self, exception):
+        requests_session = g.pop("requests_session", None)
+        if requests_session is not None:
+            requests_session.close()
+
+    @property
+    def session(self):
+        requests_session = g.get("requests_session", None)
+        if requests_session is None:
+            g.requests_session = requests.Session()
+        return g.requests_session
 
     def request(self, method, path, headers=None, **kwargs):
+        assert self.base_url, f"base_url is None"
         url = self.base_url + path
 
         if self.headers:
@@ -87,12 +72,7 @@ class HttpClient:
         if headers:
             _headers.update(headers)
 
-        if self.auth:
-            self.session_wrapper.session.auth = self.auth
-
-        return self.session_wrapper.session.request(
-            method, url, headers=headers, **kwargs
-        )
+        return self.session.request(method, url, headers=headers, **kwargs)
 
     def get(self, path, **kwargs):
         return self.request("GET", path, **kwargs)
