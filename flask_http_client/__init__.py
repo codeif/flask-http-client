@@ -48,6 +48,8 @@ class HttpClient:
         requests_session = g.get("requests_session", None)
         if requests_session is None:
             g.requests_session = requests.Session()
+            if self.auth:
+                g.requests_session.auth = self.auth
         return g.requests_session
 
     def request(self, method, path, headers=None, **kwargs):

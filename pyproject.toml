@@ -1,13 +1,13 @@
 [tool.poetry]
 name = "flask-http-client"
-version = "0.1.5"
+version = "0.1.6"
 description = ""
 authors = ["codeif <me@codeif.com>"]
 license = "BSD-3-Clause"
 readme = "README.rst"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 Flask = "*"
 requests = "*"
 
